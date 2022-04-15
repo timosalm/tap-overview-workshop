@@ -1,4 +1,3 @@
-Let's now install cert-manager, and Contour.
 
 ##### cert-manager
 
@@ -43,8 +42,8 @@ By default, Envoy will be exposed over a NodePort service. To change the service
 
 As for any other package, we can see the available configuration options via
 ```execute
-tanzu package available list contour.tanzu.vmware.com -n tap-install 
-tanzu package available get contour.tanzu.vmware.com/1.18.2+tap.1 --values-schema -n tap-install 
+tanzu package available list contour.tanzu.vmware.com -n tap-install --kubeconfig kubeconfig.yaml
+tanzu package available get contour.tanzu.vmware.com/1.18.2+tap.1 --values-schema -n tap-install --kubeconfig kubeconfig.yaml
 ```
 
 Let's now add the custom configuration at the end of the file ...
@@ -58,13 +57,13 @@ text: |
 ```
 ... and install both components via an update to our profile installation.
 ```terminal:execute
-command: tanzu package installed update tap -p tap.tanzu.vmware.com -v 1.0.2 --values-file tap-values.yml -n tap-install  
+command: tanzu package installed update tap -p tap.tanzu.vmware.com -v 1.0.2 --values-file tap-values.yml -n tap-install --kubeconfig kubeconfig.yaml 
 clear: true
 ```
 
 Execute the following command and wait until the status of the PackageInstalls is **Reconcile Succeeded**.
 ```terminal:execute
-command: tanzu package installed list -n tap-install  
+command: tanzu package installed list -n tap-install --kubeconfig kubeconfig.yaml 
 clear: true
 ````
 

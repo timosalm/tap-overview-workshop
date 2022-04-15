@@ -2,7 +2,7 @@ name: Markdown Sample
 modules:
   activate:
     - workshop-overview
-    - exercises/Install-Basic-Packages
+    - exercises/cert-manager-Contour
     - exercises/TBS-Use
     - exercises/CNRS-Use
     - exercises/Tekton-Use

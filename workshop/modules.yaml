@@ -2,8 +2,8 @@ modules:
     workshop-overview:
         name: Workshop Overview
         exit_sign: cert-manager and Contour
-    exercises/Install-Basic-Packages:
-        name: Install the first Packages required for other components
+    exercises/cert-manager-Contour:
+        name: cert-manager and Contour
         exit_sign: TBS
     exercises/TBS-Use:
         name: Getting Started with the VMware Tanzu Build Service
