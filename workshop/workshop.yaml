@@ -1,0 +1,20 @@
+name: Markdown Sample
+modules:
+  activate:
+    - workshop-overview
+    - exercises/Install-Basic-Packages
+    - exercises/TBS-Use
+    - exercises/CNRS-Use
+    - exercises/Tekton-Use
+    - exercises/Cartographer-SC-Concept
+    - exercises/Cartographer-SC-Use
+    - exercises/TAP-GUI-Use
+    - exercises/App-Accelerator-Use
+    - exercises/App-Live-View-Use
+    - exercises/SupplyChain-Secure-Use
+    - exercises/Services-Toolkit-Use
+    - exercises/API-Portal-Use
+    - exercises/Inner-Loop-Use
+    - exercises/Learning-Center-Use
+    - exercises/Reference-Architecture
+    - workshop-summary

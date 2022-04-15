@@ -1,0 +1,52 @@
+modules:
+    workshop-overview:
+        name: Workshop Overview
+        exit_sign: cert-manager and Contour
+    exercises/Install-Basic-Packages:
+        name: Install the first Packages required for other components
+        exit_sign: TBS
+    exercises/TBS-Use:
+        name: Getting Started with the VMware Tanzu Build Service
+        exit_sign: CNRs
+    exercises/CNRS-Use:
+        name: Getting Started with the Cloud Native Runtimes for VMware Tanzu
+        exit_sign: Tekton
+    exercises/Tekton-Use:
+        name: Getting Started with Tekton
+        exit_sign: Cartographer and Supply Chains (1/3)
+    exercises/Cartographer-SC-Concept:
+        name: Easily Build Cloud Native Supply Chains
+        exit_sign: Cartographer and Supply Chains (2/3)
+    exercises/Cartographer-SC-Use:
+        name: Getting Started with Cartographer and the OOTB basic Supply Chain
+        exit_sign: TAP GUI
+    exercises/TAP-GUI-Use:
+        name: Getting Started with the TAP GUI
+        exit_sign: App Accelerators (1/2)
+    exercises/App-Accelerator-Use:
+        name: Getting Started with App Accelerators
+        exit_sign: App-Live View
+    exercises/App-Live-View-Use:
+        name: Getting Started with App-Live view
+        exit_sign: Cartographer and Supply Chains (3/3)
+    exercises/SupplyChain-Secure-Use:
+        name: Getting Started with the testing and scanning Supply Chain
+        exit_sign: Services Toolkit
+    exercises/Services-Toolkit-Use:
+        name: Getting Started with Services Toolkit
+        exit_sign: API Portal and Plugin
+    exercises/API-Portal-Use:
+        name: Getting Started with the API Portal
+        exit_sign: Inner Loop
+    exercises/Inner-Loop-Use:
+        name: Getting Started with the Inner Loop IDE plugins
+        exit_sign: Learning Center
+    exercises/Learning-Center-Use:
+        name: Getting Started with the Learning Center
+        exit_sign: Reference Architecture
+    exercises/Reference-Architecture:
+        name: The future Reference Architecture for TAP
+        exit_sign: Conclusion
+    workshop-summary:
+        name: Workshop Summary
+        exit_sign: Finish Workshop
