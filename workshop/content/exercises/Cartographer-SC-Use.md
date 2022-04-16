@@ -37,7 +37,7 @@ command: |
   --git-branch main \
   --git-repo https://github.com/sample-accelerators/spring-sensors-rabbit.git \
   --type web \
-  --kubeconfig kubeconfig.yaml
+ 
 clear: true
 ```
 
@@ -105,7 +105,7 @@ tanzu apps workload get spring-sensors
 
 To disable auto scaling we can set the minScale annotation. With the tanzu CLI setting a annotation directly via a flag is not yet supported.
 ```execute
-tanzu apps workload update spring-sensors --param "annotations=autoscaling.knative.dev/minScale=\"1\"" --kubeconfig kubeconfig.yaml
+tanzu apps workload update spring-sensors --param "annotations=autoscaling.knative.dev/minScale=\"1\""
 ```
 But the workload custom resource already supports it.
 

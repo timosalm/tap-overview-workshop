@@ -87,7 +87,7 @@ With the `--export-to-all-namespaces` flag of the `tanzu secret registry add` co
 tanzu secret registry add tap-registry \
   --username ${INSTALL_REGISTRY_USERNAME} --password ${INSTALL_REGISTRY_PASSWORD} \
   --server ${INSTALL_REGISTRY_HOSTNAME} \
-  --export-to-all-namespaces --yes --namespace tap-install 
+  --export-to-all-namespaces --yes --namespace tap-install
 ```
 Let's have a look at the created SecretExport.
 ```terminal:execute

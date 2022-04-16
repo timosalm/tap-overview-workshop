@@ -13,27 +13,23 @@ Finally, the last line sets the start command for this container, which basicall
 As you can see, in general it is relatively easy and requires little effort to containerize an application, but whether you should go into production with it, is another question, because it is hard to create an optimized and secure container image (or Dockerfile).
 
 Let's have a look at a more advanced Dockerfile for the same application as a comparison. 
-```execute
-cat <<EOF > Dockerfile
-FROM adoptopenjdk:11-jre-hotspot as builder
-WORKDIR application
-ARG JAR_FILE=target/*.jar
-COPY \${JAR_FILE} application.jar
-RUN java -Djarmode=layertools -jar application.jar extract
-
-FROM adoptopenjdk:11-jre-hotspot
-WORKDIR application
-COPY --from=builder application/dependencies/ ./
-COPY --from=builder application/spring-boot-loader/ ./
-COPY --from=builder application/snapshot-dependencies/ ./
-COPY --from=builder application/application/ ./
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
-EOF
-``` 
-```editor:open-file
+```editor:append-lines-to-file
 file: Dockerfile
-line: 1
-```
+text: |
+    FROM adoptopenjdk:11-jre-hotspot as builder
+    WORKDIR application
+    ARG JAR_FILE=target/*.jar
+    COPY \${JAR_FILE} application.jar
+    RUN java -Djarmode=layertools -jar application.jar extract
+
+    FROM adoptopenjdk:11-jre-hotspot
+    WORKDIR application
+    COPY --from=builder application/dependencies/ ./
+    COPY --from=builder application/spring-boot-loader/ ./
+    COPY --from=builder application/snapshot-dependencies/ ./
+    COPY --from=builder application/application/ ./
+    ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+``` 
 
 Docker containers consist of a base image and additional layers. Once the layers are built, they'll remain cached. Therefore, subsequent generations will be much faster. Changes in the lower-level layers also rebuild the upper-level ones. Thus, the infrequently changing layers should remain at the bottom, and the frequently changing ones should be placed on top.
 In the first Dockerfile example, we used the fat jar approach. As a result, a single artifact embeds all the dependencies and the application source code. So, any change in the source code forces the rebuilding of the entire layer.
@@ -47,7 +43,7 @@ The second new feature introduced in Spring Boot 2.3 to improve the Docker image
 ##### (Cloud Native) Buildpacks
 
 Buildpacks were first conceived by Heroku in 2011. Since then, they have been adopted by Cloud Foundry and other PaaS.
-And the new generation of buildpacks, the [Cloud Native Buildpacks](https://buildpacks.io), is an incubating project in the CNCF which was initiated by Pivotal and Heroku in 2018 .
+And the new generation of buildpacks, the [Cloud Native Buildpacks](https://buildpacks.io), is an incubating project in the CNCF which was initiated by Pivotal and Heroku in 2018.
 
 Cloud Native Buildpacks (CNBs) detect what is needed to compile and run an application based on the application's source code (**detect phase**). 
 The application is then compiled by the appropriate buildpack and a container image with best practices in mind is build with the runtime environment (**build phase**). 
@@ -86,13 +82,6 @@ With an appropriate Continous Deployment pipeline, it is thus possible to deploy
 This fully automated update functionality of the base container stack is a big competitive advantage compared to tools like Redhat's Source2Image and Google's Kaniko.
 
 The main functionality of the TBS is also available as [kpack](https://github.com/pivotal/kpack) as open source software.
---> **TBS Pricing & Packaging** document for information on how it's licensed and commercial vs OSS features.
-
-Let's now check whether TBS was successfully installed and try it out.
-```terminal:execute 
-command: tanzu package installed get buildservice -n tap-install 
-clear: true
-```
 
 To interact with TBS (and kpack) we can use the kubectl CLI and custom resources or the **kp CLI**.
 ```terminal:execute
@@ -102,10 +91,10 @@ clear: true
 
 The first thing we need to do is tell TBS how to access the container registry to upload the built container image.
 The **kp secret create** command enables you to create Kubernetes secrets in a more user-friendly way with special support for GCR(--gcr) and Dockerhub(--dockerhub).
-```execute
-kubectl create ns tbs-demo
+```
 REGISTRY_PASSWORD=$CONTAINER_REGISTRY_PASSWORD kp secret create registry-credentials --registry $CONTAINER_REGISTRY_HOSTNAME --registry-user $CONTAINER_REGISTRY_USERNAME -n tbs-demo
 ```
+
 List all the available Secrets in the namespace via:
 ```terminal:execute
 command: kp secret list -n tbs-demo

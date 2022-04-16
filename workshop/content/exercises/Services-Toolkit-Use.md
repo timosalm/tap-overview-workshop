@@ -14,7 +14,7 @@ kubectl get deployments sensors-publisher
 ```
 
 ```execute
-tanzu service instance list -owide 
+tanzu service instance list -owide
 ```
 
 We are then able to add the ServiceBinding configuration to our workload.
@@ -30,7 +30,7 @@ value:
         name: rmq-1
 ```
 ```execute
-tanzu apps workload update -f workload.yaml 
+tanzu apps workload update -f workload.yaml
 ```
 
 For both, the credentials that are required for the connection to the RabbitMQ cluster are injected as environment variables into the containers via a service binding.
