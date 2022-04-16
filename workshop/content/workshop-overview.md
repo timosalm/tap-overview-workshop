@@ -4,4 +4,4 @@
 
 The goal of this workshop is to get familiar with all capabilities the components of TAP provide.
 
-The first two components we'll have a look at in the next section are external-dns and Contour.
+The first two components we'll have a look at in the next section are **external-dns** and **Contour**.

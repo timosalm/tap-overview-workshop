@@ -103,7 +103,14 @@ clear: true
 
 Examples of more advanced features of HttpProxy are rate limiting, weighted routing, and configration of the load balancing strategy for multiple target services.
 
-Let’s clean up our resources before we move on to the next component VMware Tanzu Build Service.
+To debug Ingress issues you can run the following command to see all Ingress/HTTPProxy objects and whether their configuration is valid.
+```
+kubectl get httpproxy,ingress -A
+```
+
+TAP by default uses a single Contour instance to provide internet-visible services. You can install a second Contour instance with service type ClusterIP if you want to expose some services to only the local cluster.
+
+Let’s clean up our resources before we move on to the next component **VMware Tanzu Build Service**.
 ```execute
 kubectl delete HTTPProxy nginx
 kubectl delete Ingress nginx
