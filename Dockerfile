@@ -64,6 +64,7 @@ RUN apt update
 RUN apt install ruby-full -y
 
 RUN rm -rf /tmp/*
+RUN rm tkn_0.23.0_Linux_x86_64.tar.gz
 
 USER 1001
 COPY --chown=1001:0 . /home/eduk8s/

@@ -21,9 +21,23 @@ clear: true
 ##### Serverless
 
 Before we have a closer look at CNRs, let's get a common understanding of what Serverless is.
-```dashboard:open-dashboard
-name: slides
-```
+
+Serverless doesn't mean there are no servers, ti means you don't care about them!
+
+Serverless techniques and technologies can be group into two areas:
+- **Backend as a Service (BaaS)** Replacing server-side, self-managed components with off-the-shelf services
+- **Functions as a Service (FaaS)** A new way of building and deploying server-side software, oriented around deploying individual functions
+The key is that with both, you don't have to manage your own server hosts or server processes and can focus on business value! 
+
+The key characteristics of Serverless service are that it ...
+- does not require managing a long-lived host or application instance
+- self auto-scales and auto-provisions, dependent on load
+- has implicit high availability
+- has performance capabilities defined in terms other than host size/count
+- has costs that are based on precise usage, up from and down to zero usage
+
+Serverless has several benefits like a shorter lead time, reduced packaging and deployment complexity, increased flexibility of scaling, reduced resource and labor cost, and reduced risk.
+On the other side it also has drawbacks and limitations like unpredictable costs, spinning up machines takes time, most Serverless applications are stateless and the management of state can be somewhat tricky, and higher latency due to inter-component communication over HTTP APIs and "cold starts", and loss of control.
 
 ##### Knative
 
@@ -246,7 +260,14 @@ The CNRs product team is currently working on the following additional runtimes:
 
 Let's now clean up the environment for the next section, where we have a look on how to automate our path to production.
 ```terminal:execute
-command: kubectl delete ns cnr-demo
+command: |
+ kubectl delete deployment tanzu-java-web-app
+ kubectl delete service tanzu-java-web-app
+ kubectl delete ingress tanzu-java-web-app
+ kn service delete intro-knative-example
+ kn trigger delete cloudevents-player 
+ kn broker delete default
+ kn service delete cloudevents-player 
 clear: true
 ```
 

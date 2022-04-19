@@ -4,16 +4,16 @@ Our basic supply chain provides a quick path to deployment.
 - Applying operator-defined conventions to the container definition
 - Deploying the application to the same cluster
 
-With the following command, we are able to extract it from the cluster and can have a closer look via VSCode.
+With the following command, we are able to extract all supply chains and templates from the cluster to have a closer look via VSCode.
 ```terminal:execute
 command: |
- mkdir supply-chain-basic
- kubectl eksporter "clusterconfigtemplate,clusterimagetemplates,clusterruntemplates,clustersourcetemplates,clustersupplychains,clustertemplates,clusterdelivery,ClusterDeploymentTemplate" | kubectl slice -o supply-chain-basic/ -f-
+ mkdir supply-chain
+ kubectl eksporter "clustersupplychain,clusterconfigtemplate,clusterimagetemplates,clusterruntemplates,clustersourcetemplates,clustertemplates,clusterdelivery,ClusterDeploymentTemplate" | kubectl slice -o supply-chain/ -f-
 clear: true
 ```
 
 ```editor:open-file
-file: supply-chain-basic/clustersupplychain-source-to-url.yaml
+file: supply-chain/clustersupplychain-source-to-url.yaml
 line: 1
 ```
 
@@ -30,7 +30,7 @@ Let’s take a closer look at each Cartographer object and see how they wrap the
 - A **ClusterRunTemplate** differs from supply chain templates in many aspects (e.g. cannot be referenced directly by a ClusterSupplyChain, **outputs** provide a free-form way of exposing any form of results). It defines how an immutable object should be stamped out based on data provided by a **Runnable**.
 
 Let's now deliver our first application trough the supply chain via a **Workload**, which allows the developer to pass information about the app to be delivered. 
-We use a GIT repository as a source. With that the **Supply Chain is repeatable**, so each new commit to the codebase will trigger another execution of the supply chain and feveloper have to apply a Workload only once if they start with a new application or microservice
+We use a GIT repository as a source. With that the **Supply Chain is repeatable**, so each new commit to the codebase will trigger another execution of the supply chain and developers have to apply a Workload only once if they start with a new application or microservice
 ```terminal:execute
 command: |
   tanzu apps workload create spring-sensors \
@@ -87,7 +87,7 @@ Let's have a closer look at the configuration options the Workload provides.
 url: https://cartographer.sh/docs/v0.2.0/reference/workload/#workload
 ```
 
-There are also **params** which you can configure that will be used through the supplychain.
+There are also **params** which you can configure that will be used through the ootb supplychains or can be used for inputs of custom supply chains.
 ```terminal:execute
 command: kubectl eksporter "clusterconfigtemplate,clusterimagetemplates,clusterruntemplates,clustersourcetemplates,clustersupplychains,clustertemplates,clusterdelivery,ClusterDeploymentTemplate" |  grep "param("
 clear: true
@@ -102,13 +102,12 @@ Once the status shows **Ready**, let's see how to access our application.
 ```execute
 tanzu apps workload get spring-sensors
 ```
-
-To disable auto scaling we can set the minScale annotation. With the tanzu CLI setting a annotation directly via a flag is not yet supported.
+It may take some time until your request to the url for the workload succeeds because of scale to zero which is enabled by default.
+To disable auto scaling we can set the minScale annotation via CLI ...
 ```execute
-tanzu apps workload update spring-sensors --param "annotations=autoscaling.knative.dev/minScale=\"1\""
+tanzu apps workload update spring-sensors --annotation 'autoscaling.knative.dev/minScale="1"'
 ```
-But the workload custom resource already supports it.
-
+... or in our workload.yaml.
 {% raw %}
 ```editor:insert-value-into-yaml
 file: workload.yaml

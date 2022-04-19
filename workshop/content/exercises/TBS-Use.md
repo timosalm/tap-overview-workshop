@@ -66,12 +66,6 @@ Another option is to use the [pack CLI](https://buildpacks.io/docs/tools/pack/),
 pack build
 ```
 
-Let’s clean up our resources before we move on.
-```terminal:execute
-command: rm Dockerfile
-clear: true
-```
-
 ##### VMware Tanzu Build Service and kpack
 
 With all the benefits of Cloud Native Buildpacks, one of the biggest challenges with container images still is to keep the operating system, used libraries, etc. up-to-date in order to minimize attack vectors by CVEs. For a single container image this is relatively easy and requires little effort, as we saw in the previous examples. However, at scale this looks different.
@@ -91,13 +85,14 @@ clear: true
 
 The first thing we need to do is tell TBS how to access the container registry to upload the built container image.
 The **kp secret create** command enables you to create Kubernetes secrets in a more user-friendly way with special support for GCR(--gcr) and Dockerhub(--dockerhub).
-```
-REGISTRY_PASSWORD=$CONTAINER_REGISTRY_PASSWORD kp secret create registry-credentials --registry $CONTAINER_REGISTRY_HOSTNAME --registry-user $CONTAINER_REGISTRY_USERNAME -n tbs-demo
+```terminal:execute
+command: REGISTRY_PASSWORD=$CONTAINER_REGISTRY_PASSWORD kp secret create registry-credentials --registry $CONTAINER_REGISTRY_HOSTNAME --registry-user $CONTAINER_REGISTRY_USERNAME
+clear: true
 ```
 
 List all the available Secrets in the namespace via:
 ```terminal:execute
-command: kp secret list -n tbs-demo
+command: kp secret list
 clear: true
 ```
 
@@ -154,7 +149,7 @@ ls target/
 cd ..
 ```
 
-Before we create the Image resource, we have to authenticate with our registry.
+Before we create the Image resource from source code or an artifact on our local machine, we have to authenticate with our registry.
 ```terminal:execute
 command: docker login $CONTAINER_REGISTRY_HOSTNAME -u $CONTAINER_REGISTRY_USERNAME -p $CONTAINER_REGISTRY_PASSWORD
 clear: true
@@ -162,65 +157,65 @@ clear: true
 After that we can create the Image resource by specifing the target container-image tag and the path to our JAR file.
 ```terminal:execute
 command: |
-    kubectl create ns tbs-demo 
-    kp image create tanzu-java-web-app --tag "${CONTAINER_REGISTRY_HOSTNAME}/tap-wkld/tanzu-java-web-app" --local-path tanzu-java-web-app/target/demo-0.0.1-SNAPSHOT.jar -n tbs-demo
+    kp image create tanzu-java-web-app --tag "${CONTAINER_REGISTRY_HOSTNAME}/tap-wkld/tanzu-java-web-app" --local-path tanzu-java-web-app/target/demo-0.0.1-SNAPSHOT.jar
 clear: true
 ```
 
 We can have a look at the Images available in a namespace with the kp CLI or kubectl ...
 ```terminal:execute
-command: kp image list -n tbs-demo
+command: kp image list
 clear: true
 ```
 ```terminal:execute
-command: kubectl get images.kpack.io -n tbs-demo
+command: kubectl get images.kpack.io
 clear: true
 ```
+`images` is a frequently used name for custom resources, therefore I recommend to add the group of the custom resource (`kpack.io`) or use the kp CLI. 
 
 ... and a closer look via:
 ```terminal:execute
-command: kp image status tanzu-java-web-app -n tbs-demo
+command: kp image status tanzu-java-web-app
 clear: true
 ```
 ```terminal:execute
-command: kubectl describe images.kpack.io tanzu-java-web-app -n tbs-demo
+command: kubectl describe images.kpack.io tanzu-java-web-app
 clear: true
 ```
 
 The creation of a Image resource triggers a new container build.
 ```terminal:execute
-command: kp build list -n tbs-demo
+command: kp build list
 clear: true
 ```
 ```terminal:execute
-command: kubectl get build -n tbs-demo
+command: kubectl get build
 clear: true
 ```
 
 To only show build of a specific image with the kp CLI, you have to add the name as an argument.
 ```terminal:execute
-command: kp build list tanzu-java-web-app -n tbs-demo
+command: kp build list tanzu-java-web-app
 clear: true
 ```
 
 You can get more information with the status command of the kp CLI (or via a kubectl describe) ...
 ```terminal:execute
-command: kp build status tanzu-java-web-app -n tbs-demo
+command: kp build status tanzu-java-web-app
 clear: true
 ```
 ... and the logs command (kubectl logs) to view the logs of the build process.
 ```terminal:execute
-command: kp build logs tanzu-java-web-app -n tbs-demo
+command: kp build logs tanzu-java-web-app
 clear: true
 ```
 All those commands will target the latest build by default, you can specify an older build with the "-b" flag.
 ```terminal:execute
-command: kp build status tanzu-java-web-app -n tbs-demo -b 1
+command: kp build status tanzu-java-web-app -b 1
 clear: true
 ```
 After the build succeeded, it's possible to view the bill of materials of the container image.
 ```terminal:execute
-command: kp build status tanzu-java-web-app --bom -n tbs-demo
+command: kp build status tanzu-java-web-app --bom
 clear: true
 ```
 
@@ -228,21 +223,21 @@ The concept behind an Image resource is not to create one for each change of you
 
 To update your container image manually, you can use kp CLI patch command (or kubectl edit).
 ```terminal:execute
-command: kp image patch tanzu-java-web-app -n tbs-demo --local-path .
+command: kp image patch tanzu-java-web-app --local-path .
 clear: true
 ```
 ```terminal:execute
-command: kp build list -n tbs-demo
+command: kp build list
 clear: true
 ```
 
 Let's now patch our image to use a Git repository as a source.
 ```terminal:execute
-command: kp image patch tanzu-java-web-app --git https://github.com/sample-accelerators/tanzu-java-web-app.git --git-revision main -n tbs-demo
+command: kp image patch tanzu-java-web-app --git https://github.com/sample-accelerators/tanzu-java-web-app.git --git-revision main
 clear: true
 ```
 ```terminal:execute
-command: kp build list -n tbs-demo
+command: kp build list
 clear: true
 ```
 
@@ -260,19 +255,21 @@ The REASON field of an Image Build describes why an image rebuild occurred. Thes
 
 You can also manually trigger a rebuild with the same configuration.
 ```terminal:execute
-command: kp image trigger tanzu-java-web-app -n tbs-demo
+command: kp image trigger tanzu-java-web-app
 clear: true
 ```
 
 To delete an Image, run the image delete command.
 ```terminal:execute
-command: kp image delete tanzu-java-web-app -n tbs-demo
+command: kp image delete tanzu-java-web-app
 clear: true
 ```
 
 TBS also supports **image signing** with [cosign](https://github.com/sigstore/cosign).
 
-Let’s clean up our resources before we move on.
+Let’s clean up our resources before we move on with the **Cloud Native Runtimes for VMware Tanzu**.
 ```execute
+rm Dockerfile
+rm -rf tanzu-java-web-app
 kubectl delete ns tbs-demo
 ````

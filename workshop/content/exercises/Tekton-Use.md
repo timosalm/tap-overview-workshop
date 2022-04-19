@@ -2,7 +2,9 @@ Tekton is a cloud-native solution for building CI/CD systems that runs as an ext
 
 It consists of **Tekton Pipelines**, which provides the building blocks, and of supporting components, such as Tekton CLI, Tekton Triggers and Tekton Catalog, that make Tekton a complete ecosystem.
 
-Only Tekton Pipelines will be installed as part of TAP.
+Only Tekton Pipelines will be installed as part of TAP. 
+
+Both, OpenShift Piplines and Jenkins X are based on Tekton.
 
 ##### Concept model
 
@@ -16,6 +18,7 @@ For more complex workloads, there is a concept of **Pipelines** that define a se
 ![Pipeline Concept Diagram](../images/tekton.png)
 
 Each Task and Pipeline may have its own inputs and outputs, known as input and output **resources** in Tekton. 
+**PipelineResources** have been deprecated and to ease migration away from PipelineResources some types have an equivalent **default Task** available in the [catalog](https://github.com/tektoncd/catalog/tree/main/task) which have to be manually installed in a TAP environment.
 
 A **PipelineRun** instantiates a specific Pipeline to execute on a particular set of inputs and produce a particular set of outputs to particular destinations.
 Similarly, a **TaskRun** is a specific execution of a task.
@@ -24,83 +27,36 @@ Similarly, a **TaskRun** is a specific execution of a task.
 
 ###### Automation of our path to production
 
-Let's first create a namespace, required RBAC rules and secrets for e.g. the container registry.
-```execute
-kubectl create ns tekton-demo
-cat <<EOF | kubectl apply -n tekton-demo -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: tap-registry
-  annotations:
-    secretgen.carvel.dev/image-pull-secret: ""
-type: kubernetes.io/dockerconfigjson
-data:
-  .dockerconfigjson: e30K
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: tekton-pipeline
-rules:
-- apiGroups: [kpack.io]
-  resources: [images]
-  verbs: ['*']
-- apiGroups: [serving.knative.dev]
-  resources: ['services']
-  verbs: ['*']
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: tekton-pipeline
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: tekton-pipeline
-subjects:
-  - kind: ServiceAccount
-    name: default
-EOF
-REGISTRY_PASSWORD=$CONTAINER_REGISTRY_PASSWORD kp secret create registry-credentials --registry ${CONTAINER_REGISTRY_HOSTNAME} --registry-user ${CONTAINER_REGISTRY_USERNAME} -n tekton-demo
-kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "registry-credentials"},{"name": "tap-registry"}]}' -n tekton-demo
-```
-
-Now we can start with the creation of our Tekton Pipeline to automate our path to production.
+To get familiar with Tekton Piplines, let's build a Tekton Pipeline to automate our path to production.
 ```terminal:execute
-command:  |
-    mkdir tekton-pipeline
-    cat <<EOF> tekton-pipeline/pipeline.yaml
-    apiVersion: tekton.dev/v1beta1
-    kind: Pipeline
-    metadata:
-      name: path-to-prod-pipeline
-    spec:
-      params:
-      - name: git-url
-        type: string
-      - name: git-revision
-        type: string
-        default: main
-      - name: app-name
-        type: string
-      - name: app-image-tag
-        type: string
-    EOF
-clear: true
+command: mkdir tekton-pipeline
 ```
-```editor:open-file
+
+```editor:append-lines-to-file
 file: tekton-pipeline/pipeline.yaml
-line: 1
+text: |2
+  apiVersion: tekton.dev/v1beta1
+  kind: Pipeline
+  metadata:
+    name: path-to-prod-pipeline
+  spec:
+    params:
+    - name: git-url
+      type: string
+    - name: git-revision
+      type: string
+      default: main
+    - name: app-name
+      type: string
+    - name: app-image-tag
+      type: string
 ```
 
 After we have defined a name and all input parameters for our pipeline, the next step is to define the different tasks. 
 
-We will use some of the **default Tasks** that are available but not yet installed with the TAP installation of Tekton.
 The first one is the **git-clone task**, which we can install via the following command in our namespace.
 ```terminal:execute
-command: kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.5/git-clone.yaml -n tekton-demo
+command: kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.5/git-clone.yaml
 clear: true
 ```
 We can now reference this task in our Pipeline with the following specification.
@@ -128,29 +84,24 @@ In addition to the task reference and parameters, there is also a **Workspace** 
 
 As next step of our path to production we want to run unit tests. For this, we first have to create our own custom Task ...
 {% raw %}
-```terminal:execute
-command:  |
-    cat <<EOF> tekton-pipeline/test-task.yaml
-    apiVersion: tekton.dev/v1beta1
-    kind: Task
-    metadata:
-      name: mvn-test
-    spec:
-      workspaces:
-      - name: source
-      steps:
-      - name: test
-        image: maven:3-openjdk-11
-        script: |-
-          mvn test -f \$(workspaces.source.path)/
-    EOF
-clear: true
+```editor:append-lines-to-file
+file: tekton-pipeline/test-task.yaml
+text: |2
+  apiVersion: tekton.dev/v1beta1
+  kind: Task
+  metadata:
+    name: mvn-test
+  spec:
+    workspaces:
+    - name: source
+    steps:
+    - name: test
+      image: maven:3-openjdk-11
+      script: |-
+        mvn test -f \$(workspaces.source.path)/
 ```
 {% endraw %}
-```editor:open-file
-file: tekton-pipeline/test-task.yaml
-line: 1
-```
+
 ... and reference it in the Pipeline specification.
 {% raw %}
 ```editor:append-lines-to-file
@@ -168,59 +119,53 @@ text: |2
 {% endraw %}
 After the unit tests ran successful, we want to **trigger VMware Tanzu Build Service to build and push an image** to our registry of choice which also has to be implemented as a custom Task.
 {% raw %}
-```terminal:execute
-command:  |
-    cat <<EOF> tekton-pipeline/build-image-task.yaml
-    apiVersion: tekton.dev/v1beta1
-    kind: Task
-    metadata:
-      name: tbs
-    spec:
-      params:
-      - name: app-name
-      - name: app-image-tag
-      workspaces:
-      - name: source
-      results:
-      - name: image-digest
-        description: Digest of the image just built.
-      steps:
-      - name: build-and-push
-        image: kpack/kp
-        script: |-
-            #!/bin/bash
-            set -euxo pipefail
-
-            current_namespace=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-            # Set contexts from local service account for kp-cli
-            kubectl config set-cluster tbs-cluster --server=https://kubernetes.default \
-                --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-            kubectl config set-context tbs --cluster=tbs-cluster
-            kubectl config set-credentials tbs-user \
-                --token=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-            kubectl config set-context tbs --user=tbs-user \
-                --namespace="\${current_namespace}"
-            kubectl config use-context tbs
-
-            if kp image save \$(params.app-name) \
-                --tag \$(params.app-image-tag) \
-                --local-path \$(workspaces.source.path)/. \
-                --namespace="\${current_namespace}" --wait >/dev/null; then
-                echo "Image build and push finished successfull"
-            else
-                echo Image build and push finished with error code $?
-            fi
-
-            kubectl get images.kpack.io spring-sensors -o jsonpath='{.status.latestImage}' --namespace="\${current_namespace}" | tee /tekton/results/image-digest
-            cat /tekton/results/image-digest 
-    EOF
-clear: true
-```
-{% endraw %}
-```editor:open-file
+```editor:append-lines-to-file
 file: tekton-pipeline/build-image-task.yaml
-line: 1
+text: |2
+  apiVersion: tekton.dev/v1beta1
+  kind: Task
+  metadata:
+    name: tbs
+  spec:
+    params:
+    - name: app-name
+    - name: app-image-tag
+    workspaces:
+    - name: source
+    results:
+    - name: image-digest
+      description: Digest of the image just built.
+    steps:
+    - name: build-and-push
+      image: kpack/kp
+      script: |-
+        #!/bin/bash
+        set -euxo pipefail
+
+        current_namespace=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+        # Set contexts from local service account for kp-cli
+        kubectl config set-cluster tbs-cluster --server=https://kubernetes.default \
+            --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        kubectl config set-context tbs --cluster=tbs-cluster
+        kubectl config set-credentials tbs-user \
+            --token=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+        kubectl config set-context tbs --user=tbs-user \
+            --namespace="\${current_namespace}"
+        kubectl config use-context tbs
+
+        if kp image save \$(params.app-name) \
+            --tag \$(params.app-image-tag) \
+            --local-path \$(workspaces.source.path)/. \
+            --namespace="\${current_namespace}" --wait >/dev/null; then
+            echo "Image build and push finished successfull"
+        else
+            echo Image build and push finished with error code $?
+        fi
+
+        kubectl get images.kpack.io spring-sensors -o jsonpath='{.status.latestImage}' --namespace="\${current_namespace}" | tee /tekton/results/image-digest
+        cat /tekton/results/image-digest 
 ```
+
 After that, we are also able to reference it in our Pipeline.
 {% raw %}
 ```editor:append-lines-to-file
@@ -243,7 +188,7 @@ text: |2
 {% endraw %}
 The last step in our path to production is the **deployment via a Knative Serving Service**. For the kn CLI, there is also a **default Task** available which we can install via ...
 ```terminal:execute
-command: kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/kn/0.1/kn.yaml -n tekton-demo
+command: kubectl apply -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/kn/0.1/kn.yaml
 clear: true
 ```
 ... and reference in our Pipeline.
@@ -264,7 +209,6 @@ text: |2
         - '$(params.app-name)'
         - '--force'
         - '--image=$(tasks.build-image.results.image-digest)'
-        - '--namespace=tekton-demo'
 ```
 {% endraw %}
 Now we have to define a **PipelineRun** that sets values for our parameters.
@@ -304,24 +248,24 @@ line: 1
 
 Let's apply all those custom resources to our cluster. Sometimes the PipelineRun fails because the Pipline is not yet available. This is why we apply our resources in an order.
 ```terminal:execute
-command: ytt -f tekton-pipeline/build-image-task.yaml -f tekton-pipeline/test-task.yaml -f tekton-pipeline/pipeline.yaml -f tekton-pipeline/pipeline-run.yaml | kubectl apply -n tekton-demo -f-
+command: ytt -f tekton-pipeline/build-image-task.yaml -f tekton-pipeline/test-task.yaml -f tekton-pipeline/pipeline.yaml -f tekton-pipeline/pipeline-run.yaml | kubectl apply -f-
 clear: true
 ```
 
 As an alternative to kubectl, we can use the tkn cli to discover our Pipeline, PipelineRuns and Tasks in the cluster.
 ```execute
-tkn pipelinerun list -n tekton-demo
+tkn pipelinerun list
 ```
 ```execute
-tkn pipelinerun describe path-to-prod-pipeline-run -n tekton-demo
+tkn pipelinerun describe path-to-prod-pipeline-run
 ```
 ```execute
-tkn pipelinerun logs path-to-prod-pipeline-run -f -n tekton-demo
+tkn pipelinerun logs path-to-prod-pipeline-run -f
 ```
 
 If the PipelineRun is successful, we can have a look at our tested and deployed application.
 ```terminal:execute
-command: kn service list -n tekton-demo
+command: kn service list
 clear: true
 ```
 
@@ -332,5 +276,5 @@ Because Tekton Triggers are not installed via TAP, we will not cover it in this 
 Let’s clean up our resources before we move on.
 ```execute
 rm -rf tekton-pipeline
-kubectl delete ns tekton-demo
-````
+ytt -f tekton-pipeline/build-image-task.yaml -f tekton-pipeline/test-task.yaml -f tekton-pipeline/pipeline.yaml -f tekton-pipeline/pipeline-run.yaml | kubectl delete -f-
+```

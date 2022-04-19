@@ -11,9 +11,9 @@ modules:
     - exercises/TAP-GUI-Use
     - exercises/App-Accelerator-Use
     - exercises/App-Live-View-Use
+    - exercises/API-Portal-Use
     - exercises/SupplyChain-Secure-Use
     - exercises/Services-Toolkit-Use
-    - exercises/API-Portal-Use
     - exercises/Inner-Loop-Use
     - exercises/Learning-Center-Use
     - exercises/Reference-Architecture
