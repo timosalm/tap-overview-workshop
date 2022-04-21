@@ -1,17 +1,4 @@
-ARG IMAGE_REPOSITORY=quay.io/eduk8s
-FROM ${IMAGE_REPOSITORY}/pkgs-java-tools as java-tools
-
-FROM registry.tanzu.vmware.com/tanzu-application-platform/tap-packages@sha256:681ef8d2e6fc8414b3783e4de424adbfabf2aa0126e34fa7dcd07dab61e55a89
-
-COPY --from=java-tools --chown=1001:0 /opt/jdk11 /opt/java
-COPY --from=java-tools --chown=1001:0 /opt/gradle /opt/gradle
-COPY --from=java-tools --chown=1001:0 /opt/maven /opt/maven
-COPY --from=java-tools --chown=1001:0 /home/eduk8s/. /home/eduk8s/
-COPY --from=java-tools --chown=1001:0 /opt/eduk8s/. /opt/eduk8s/
-
-ENV PATH=/opt/java/bin:/opt/gradle/bin:/opt/maven/bin:$PATH \
-    JAVA_HOME=/opt/java \
-    M2_HOME=/opt/maven
+FROM registry.tanzu.vmware.com/tanzu-application-platform/tap-packages@sha256:a8870aa60b45495d298df5b65c69b3d7972608da4367bd6e69d6e392ac969dd4
 
 # All the direct Downloads need to run as root as they are going to /usr/local/bin
 USER root
@@ -37,7 +24,7 @@ RUN curl -LO https://github.com/tektoncd/cli/releases/download/v0.23.0/tkn_0.23.
     && chmod 755 /usr/local/bin/tkn
 
 # Utilities
-RUN apt-get update && apt-get install -y unzip
+RUN apt-get update && apt-get install -y unzip openjdk-11-jdk
 
 # Install krew
 RUN \
@@ -63,6 +50,21 @@ RUN chmod 775 -R $HOME/.krew
 RUN apt update
 RUN apt install ruby-full -y
 
+# Install Tanzu Dev Tools
+COPY tanzu-vscode-extension.vsix /tmp
+RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --version=4.3.0
+RUN cp -rf /usr/lib/code-server/* /opt/code-server/
+RUN rm -rf /usr/lib/code-server /usr/bin/code-server
+
+RUN code-server --install-extension /tmp/tanzu-vscode-extension.vsix
+RUN chown -R eduk8s:users /home/eduk8s/.cache
+RUN chown -R eduk8s:users /home/eduk8s/.local
+
+RUN curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash 
+RUN chown -R eduk8s:users /home/eduk8s/.tilt-dev
+
+# Cleanup directory
+
 RUN rm -rf /tmp/*
 RUN rm tkn_0.23.0_Linux_x86_64.tar.gz
 
@@ -70,3 +72,4 @@ USER 1001
 COPY --chown=1001:0 . /home/eduk8s/
 RUN fix-permissions /home/eduk8s
 RUN rm /home/eduk8s/tanzu-framework-linux-amd64.tar
+RUN rm /home/eduk8s/tanzu-vscode-extension.vsix
