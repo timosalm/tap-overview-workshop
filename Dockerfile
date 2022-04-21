@@ -24,7 +24,7 @@ RUN curl -LO https://github.com/tektoncd/cli/releases/download/v0.23.0/tkn_0.23.
     && chmod 755 /usr/local/bin/tkn
 
 # Utilities
-RUN apt-get update && apt-get install -y unzip openjdk-11-jdk
+RUN apt-get update && apt-get install -y unzip openjdk-11-jdk moreutils
 
 # Install krew
 RUN \
