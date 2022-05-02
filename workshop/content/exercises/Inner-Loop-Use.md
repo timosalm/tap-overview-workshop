@@ -6,6 +6,9 @@ This extension enables you to:
 - Generate snippets to quickly create TAP configuration files
 Note: This extension currently only supports Java apps.
 
+
+##### Live update your application
+
 ```terminal:execute
 command: docker login $CONTAINER_REGISTRY_HOSTNAME -u $CONTAINER_REGISTRY_USERNAME -p $CONTAINER_REGISTRY_PASSWORD
 clear: true
@@ -22,3 +25,5 @@ text: |2
 ```
 
 Right-click on the Tiltfile and select Live Update Start. Wait until the application is started.
+
+##### Debug your application

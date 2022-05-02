@@ -4,7 +4,7 @@ It consists of **Tekton Pipelines**, which provides the building blocks, and of 
 
 Only Tekton Pipelines will be installed as part of TAP. 
 
-Both, OpenShift Piplines and Jenkins X are based on Tekton.
+Both, OpenShift Pipelines and Jenkins X are based on Tekton.
 
 ##### Concept model
 
