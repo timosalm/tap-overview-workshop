@@ -1,7 +1,4 @@
-
-##### cert-manager
-
-cert-manager adds **certificates** and **certificate issuers** as resource types in Kubernetes clusters. It also helps you to **obtain, renew, and use those certificates**. 
+**cert-manager** adds **certificates** and **certificate issuers** as resource types in Kubernetes clusters. It also helps you to **obtain, renew, and use those certificates**. 
 It's a prerequisite for several of other TAP components and can also be used to configure HTTPS in TAP e.g. in combination with Contour.
 
 For more information about cert-manager, see the cert-manager documentation.
@@ -30,7 +27,7 @@ Let's now validate that Contour is functioning correctly by deploying an applica
 ```execute
 kubectl create deployment --image=nginx nginx
 kubectl expose deployment nginx --port 80
-kubectl create ingress nginx --rule="nginx-{{ session_namespace }}.${TAP_INGRESS_DOMAIN}/*=nginx:80"
+kubectl create ingress nginx --rule="nginx-{{ session_namespace }}.${TAP_INGRESS}/*=nginx:80"
 ```
 
 Validate that your resources are deployed and ready.
@@ -40,7 +37,7 @@ clear: true
 ```
 
 ```terminal:execute
-command: kubectl ingress nginx -o yaml
+command: kubectl get ingress nginx -o yaml
 clear: true
 ```
 The Ingress spec has all the information needed to configure a load balancer or proxy server. Most importantly, it contains a list of rules matched against all incoming requests. 
@@ -53,19 +50,19 @@ A defaultBackend is often configured in an Ingress controller to service any req
 
 You should be able to access the application via
 ```terminal:execute
-command: curl -s nginx-{{ session_namespace }}.$TAP_INGRESS_DOMAIN | grep h1
+command: curl -s nginx-{{ session_namespace }}.$TAP_INGRESS | grep h1
 clear: true
 ```
 
 You can [secure an Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#tls) by specifying a Secret that contains a TLS private key and certificate which can be managed by cert-manager. 
-Contour’s TLS certificate delegation allows Ingresses to use a TLS certificate from a different namespace. With Ingress v1 you have to define the namespace that contains the TLS certificate via the `projectcontour.io/tls-cert-namespace` annotation because it doesn't allow the secretName field to contain a string with a full namespace/name identifier.
+Contour’s **TLS certificate delegation** allows Ingresses to use a TLS certificate from a different namespace. With Ingress v1 you have to define the namespace that contains the TLS certificate via the `projectcontour.io/tls-cert-namespace` annotation because it doesn't allow the secretName field to contain a string with a full namespace/name identifier.
 See the documentation here:
 ```dashboard:open-url
 url: https://projectcontour.io/docs/v1.20.1/config/ingress/#tls
 ```
 Keep in mind that you have to use a PackageInstall overlay to change any configuration not exposed via the tap-values.yaml. Therefore adding an overlay for the `projectcontour.io/tls-cert-namespace` annotation is the only way to enable TLS certificate delegation with the Ingress resource.
 
-As well as the **Ingress**, Contour supports a custom resource type **HTTPProxy** which extends the concept of Ingress to add many features that you would normally have to reach for Istio or a similar service mesh to get. Examples are service weighting and configuring the load balancing strategy for multiple services that are configured for a single route.
+As well as the **Ingress**, Contour supports a custom resource type **HTTPProxy** which extends the concept of Ingress to add many features that you would normally have to reach for Istio or a similar service mesh to get. Examples are rate limiting, weighted routing, and configuring the load balancing strategy for multiple services that are configured for a single route.
 
 In TAP most of the components use HTTPProxy, which e.g. has the benefit of being able to reference a TLS Kubernetes Secret in a different namespace in the secretName field. Only *Learning Center for Tanzu Application Service* still uses Ingress resources.
 
@@ -78,7 +75,7 @@ metadata:
   name: nginx
 spec:
   virtualhost:
-    fqdn: nginx-http-proxy-{{ session_namespace }}.$TAP_INGRESS_DOMAIN 
+    fqdn: nginx-http-proxy-{{ session_namespace }}.$TAP_INGRESS 
   routes:
     - conditions:
       - prefix: /
@@ -97,18 +94,16 @@ clear: true
 
 ... we can access the application via:
 ```terminal:execute
-command: curl -s nginx-http-proxy-{{ session_namespace }}.$TAP_INGRESS_DOMAIN  | grep h1
+command: curl -s nginx-http-proxy-{{ session_namespace }}.$TAP_INGRESS  | grep h1
 clear: true
 ```
-
-Examples of more advanced features of HttpProxy are rate limiting, weighted routing, and configration of the load balancing strategy for multiple target services.
 
 To debug Ingress issues you can run the following command to see all Ingress/HTTPProxy objects and whether their configuration is valid.
 ```
 kubectl get httpproxy,ingress -A
 ```
 
-TAP by default uses a single Contour instance to provide internet-visible services. You can install a second Contour instance with service type ClusterIP if you want to expose some services to only the local cluster.
+TAP by default uses a single Contour instance to provide internet-visible services. You can install a second Contour instance with service type ClusterIP if you want to expose some services to only the local cluster. The second instance must be installed in a separate namespace and you must set the CNR configuration value `cnrs.ingress.internal.namespace` to point to this namespace.
 
 Let’s clean up our resources before we move on to the next component **VMware Tanzu Build Service**.
 ```execute

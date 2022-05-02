@@ -18,7 +18,10 @@ spec:
     files: #@ "github.com/{}/tap-overview-workshop?ref={}".format(data.values.workshop_git.username,data.values.workshop_git.branch)
   session:
     namespaces:
-    budget: custom
+      budget: xxx-large
+      limits:
+        min:
+          cpu: 25m
     applications:
       terminal:
         enabled: true
@@ -225,3 +228,74 @@ spec:
             scanner:
               pullSecret: ""
             targetImagePullSecret: registry-credentials
+      # Contour section
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: $(session_namespace)-default
+          namespace: tanzu-system-ingress
+        rules:
+          - apiGroups: [""]
+            resources: ["services"]
+            verbs: ["list"]
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: $(session_namespace)-default
+          namespace: tanzu-system-ingress
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: $(session_namespace)-default     
+        subjects:
+        - kind: Group
+          name: system:serviceaccounts:$(workshop_namespace)
+          namespace: $(session_namespace)
+          apiGroup: rbac.authorization.k8s.io
+      # CNRs section
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: $(session_namespace)-default
+          namespace: knative-serving
+        rules:
+          - apiGroups: [""]
+            resources: ["configmaps"]
+            verbs: ["get", "list"]
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: $(session_namespace)-default
+          namespace: knative-serving
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: $(session_namespace)-default     
+        subjects:
+        - kind: Group
+          name: system:serviceaccounts:$(workshop_namespace)
+          namespace: $(session_namespace)
+          apiGroup: rbac.authorization.k8s.io
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          name: $(session_namespace)-default
+          namespace: knative-eventing
+        rules:
+          - apiGroups: [""]
+            resources: ["configmaps"]
+            verbs: ["get", "list"]
+      - apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: $(session_namespace)-default
+          namespace: knative-eventing
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: Role
+          name: $(session_namespace)-default     
+        subjects:
+        - kind: Group
+          name: system:serviceaccounts:$(workshop_namespace)
+          namespace: $(session_namespace)
+          apiGroup: rbac.authorization.k8s.io

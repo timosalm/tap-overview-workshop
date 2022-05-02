@@ -114,8 +114,11 @@ A **Stack** resource is the specification for a cloud native buildpacks stack us
 command: kp clusterstack list
 clear: true
 ```
-kp clusterstack status default
-A **CustomStack** resource is not available with kpack, and allows users to create a customized ClusterStack from Ubuntu 18.04 (Bionic Beaver) and UBI7/UBI8 non-minimal based OCI images.
+```terminal:execute
+command: kp clusterstack status default
+clear: true
+```
+A **CustomStack** resource is only available with TBS and not kpack, and allows users to create a customized ClusterStack from Ubuntu 18.04 (Bionic Beaver) and UBI7/UBI8 non-minimal based OCI images.
 
 A **Builder** uses a ClusterStore, a ClusterStack, and an order definition to construct a builder image.
 This order definition determines the order in which groups of buildpacks will be tested during detection. Detection is a phase of the buildpack execution where buildpacks are tested, one group at a time, for compatibility with the provided application source code. 
@@ -172,7 +175,7 @@ clear: true
 ```
 `images` is a frequently used name for custom resources, therefore I recommend to add the group of the custom resource (`kpack.io`) or use the kp CLI. 
 
-... and a closer look via:
+You can have a closer look via
 ```terminal:execute
 command: kp image status tanzu-java-web-app
 clear: true
@@ -192,7 +195,7 @@ command: kubectl get build
 clear: true
 ```
 
-To only show build of a specific image with the kp CLI, you have to add the name as an argument.
+To only show builds of a specific image with the kp CLI, you have to add the name as an argument.
 ```terminal:execute
 command: kp build list tanzu-java-web-app
 clear: true

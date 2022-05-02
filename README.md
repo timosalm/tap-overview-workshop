@@ -1,11 +1,12 @@
 # Carvel self-paced learning workshop for the installation of TAP
 
-A [Learning Center for VMware Tanzu](https://docs.vmware.com/en/Tanzu-Application-Platform/1.0/tap/GUID-learning-center-about.html) workshop for self-paced learning of all the tools Carvel provides for the installation of TAP
+A [Learning Center for VMware Tanzu](https://docs.vmware.com/en/Tanzu-Application-Platform/1.1/tap/GUID-learning-center-about.html) workshop for self-paced learning of all the tools Carvel provides for the installation of TAP
 
 
 ## Prerequisites
 
-- A TAP 1.1 environment with ootb basic and testing-scanning installed 
+- A TAP 1.1 environment with both ootb basic and testing-scanning installed 
+- [Functions Beta configured (only ClusterStore + ClusterBuilder)](https://docs.vmware.com/en/Tanzu-Application-Platform/1.1/tap/GUID-workloads-functions.html#adding-function-buildpacks-2)
 
 ## Workshop installation
 Download the Tanzu CLI for Linux and the Tanzu Developer Tools for Visual Studio Code from https://network.tanzu.vmware.com/products/tanzu-application-platform to the root of the directory.

@@ -1,4 +1,4 @@
-- Fuctions runtime beta
 - Container source supply chain
 - 1.1 selector for supply chain in addition of labels
 - make kubeconfig available for session
+- Where to apply registry credentials and docker login

@@ -98,12 +98,11 @@ text: |2
     - name: test
       image: maven:3-openjdk-11
       script: |-
-        mvn test -f \$(workspaces.source.path)/
+        mvn test -f $(workspaces.source.path)/
 ```
 {% endraw %}
 
 ... and reference it in the Pipeline specification.
-{% raw %}
 ```editor:append-lines-to-file
 file: tekton-pipeline/pipeline.yaml
 text: |2
@@ -116,7 +115,6 @@ text: |2
       - name: source
         workspace: git-source
 ```
-{% endraw %}
 After the unit tests ran successful, we want to **trigger VMware Tanzu Build Service to build and push an image** to our registry of choice which also has to be implemented as a custom Task.
 {% raw %}
 ```editor:append-lines-to-file
@@ -142,30 +140,30 @@ text: |2
         #!/bin/bash
         set -euxo pipefail
 
-        current_namespace=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+        current_namespace=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
         # Set contexts from local service account for kp-cli
         kubectl config set-cluster tbs-cluster --server=https://kubernetes.default \
             --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         kubectl config set-context tbs --cluster=tbs-cluster
         kubectl config set-credentials tbs-user \
-            --token=\$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+            --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
         kubectl config set-context tbs --user=tbs-user \
-            --namespace="\${current_namespace}"
+            --namespace="${current_namespace}"
         kubectl config use-context tbs
 
-        if kp image save \$(params.app-name) \
-            --tag \$(params.app-image-tag) \
-            --local-path \$(workspaces.source.path)/. \
-            --namespace="\${current_namespace}" --wait >/dev/null; then
+        if kp image save $(params.app-name) \
+            --tag $(params.app-image-tag) \
+            --local-path $(workspaces.source.path)/. \
+            --namespace="${current_namespace}" --wait >/dev/null; then
             echo "Image build and push finished successfull"
         else
             echo Image build and push finished with error code $?
         fi
 
-        kubectl get images.kpack.io spring-sensors -o jsonpath='{.status.latestImage}' --namespace="\${current_namespace}" | tee /tekton/results/image-digest
+        kubectl get images.kpack.io spring-sensors -o jsonpath='{.status.latestImage}' --namespace="${current_namespace}" | tee /tekton/results/image-digest
         cat /tekton/results/image-digest 
 ```
-
+{% endraw %}
 After that, we are also able to reference it in our Pipeline.
 {% raw %}
 ```editor:append-lines-to-file

@@ -33,7 +33,7 @@ clear: true
 {% raw %}
 ```terminal:execute
 command: |
-    tanzu accelerator generate hello-fun --server-url "https://accelerator.${TAP_INGRESS_DOMAIN}" --options="{\"deploymentType\": \"workload\",\"artifactId\":\"hello-vmware\"}"
+    tanzu accelerator generate hello-fun --server-url "https://accelerator.${TAP_INGRESS}" --options="{\"deploymentType\": \"workload\",\"artifactId\":\"hello-vmware\"}"
 clear: true
 ```
 {% endraw %}

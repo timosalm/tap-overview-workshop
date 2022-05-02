@@ -6,7 +6,7 @@ Let's use imperative commands for it ...
 command: |-
     kubectl create deployment tanzu-java-web-app --image "${CONTAINER_REGISTRY_HOSTNAME}/tap-wkld/tanzu-java-web-app"
     kubectl expose deployment tanzu-java-web-app --port 8080 --type ClusterIP
-    kubectl create ingress tanzu-java-web-app --rule="tanzu-java-web-app.${TAP_INGRESS_DOMAIN}/*=tanzu-java-web-app:8080"
+    kubectl create ingress tanzu-java-web-app --rule="tanzu-java-web-app.${TAP_INGRESS}/*=tanzu-java-web-app:8080"
 clear: true
 ```
 ... and have a look at all YAML that was created for that minimal configuration.
@@ -22,7 +22,7 @@ clear: true
 
 Before we have a closer look at CNRs, let's get a common understanding of what Serverless is.
 
-Serverless doesn't mean there are no servers, ti means you don't care about them!
+Serverless doesn't mean there are no servers, it means you don't care about them!
 
 Serverless techniques and technologies can be group into two areas:
 - **Backend as a Service (BaaS)** Replacing server-side, self-managed components with off-the-shelf services
@@ -171,7 +171,7 @@ Another option is to set the annotation via the kn CLI ...
 command: kn service update intro-knative-example --annotation autoscaling.knative.dev/minScale=2
 clear: true
 ```
-```terminal:execute
+```execute
 kubectl get pods
 ```
 
@@ -235,28 +235,61 @@ Knative Eventing provides additional more advanced features for e.g. brokering a
 
 To configure the CNRs Knative Serving and Knative Eventing with configurations that are not exposed to the Carvel Package you can edit the following Config Maps.
 ```terminal:execute
-command:  kubectl get cm -n knative-serving
+command: kubectl get cm -n knative-serving
 clear: true
 ```
 ```terminal:execute
-command:  kubectl get cm -n knative-eventing
+command: kubectl get cm -n knative-eventing
 clear: true
 ```
 
 As an example, let's have a look at the autoscaler configuration.
 ```terminal:execute
-command:  kubectl get cm config-autoscaler -n knative-serving -o yaml
+command: kubectl get cm config-autoscaler -n knative-serving -o yaml
 clear: true
 ```
 
 If you update your TAP installation those will be reset to default if you don't apply them as an [Overlay of a PackageInstall](https://carvel.dev/kapp-controller/docs/v0.32.0/package-install-extensions/)
 
-##### Streaming, Batch, and Functions runtimes
+##### Functions runtime
+With TAP 1.1 a public beta of a polyglot serverless function experience for Kubernetes was released. 
+```dashboard:open-url
+url: {{ ENV_TAP_PRODUCT_DOCS_BASE_URL }}/GUID-workloads-functions.html
+```
+
+It leverages Knative and [new Cloud Native Buildpacks](https://github.com/vmware-tanzu/function-buildpacks-for-knative) and currently supports Java and Python HTTP functions. .NET and NodeJS support is planned.
+
+Let's clone the following GIT repository with a sample application and give it a try.
+```terminal:execute
+command: git clone https://github.com/tsalm-pivotal/functions-cnb-java-sample.git
+clear: true
+```
+
+The repository contains a Java Function that can be built using the new Java HTTP Function Buildpack.
+```editor:open-file
+file: functions-cnb-java-sample/src/main/java/functions/Hire.java
+line: 1
+```
+
+The following commands will create a container using TBS and a ClusterBuilder configured for the new buildpacks and deploy the container on Knative Serving.
+```terminal:execute
+command: |
+  kp image create java-function --cluster-builder function --tag "${CONTAINER_REGISTRY_HOSTNAME}/tap-wkld/java-function" --local-path functions-cnb-java-sample/ --wait
+  kn service create java-function --image "${CONTAINER_REGISTRY_HOSTNAME}/tap-wkld/java-function"
+clear: true
+```
+
+After the container is built and the application is deployed, let's check whether it works.
+```terminal:execute
+command: curl $(kn service describe java-function -o url)/hire -H "Content-Type: application/json" -d '{"firstName":"John", "lastName":"Doe"}'
+clear: true
+```
+
+##### Streaming, Batch runtimes
 
 The CNRs product team is currently working on the following additional runtimes:
 - **Streaming**: A polyglot runtime that can simplify the orchestration of diverse data processing architecture patterns. By reimagining the building blocks of Spring Cloud Data Flow with polyglot-friendly and Kubernetes-native principles, the Streaming runtime will bridge the gap between application development and data ‘organization silos’.
 - **Batch:** Scheduled jobs to complete tasks
-- **Functions:** A polyglot serverless function experience for Kubernetes, leveraging Knative and new Cloud Native Buildpacks.
 
 Let's now clean up the environment for the next section, where we have a look on how to automate our path to production.
 ```terminal:execute
@@ -268,6 +301,8 @@ command: |
  kn trigger delete cloudevents-player 
  kn broker delete default
  kn service delete cloudevents-player 
+ rm -rf functions-cnb-java-sample
+ kn service delete java-function
 clear: true
 ```
 
